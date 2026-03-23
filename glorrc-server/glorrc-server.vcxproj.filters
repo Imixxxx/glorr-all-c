@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\server">
+      <UniqueIdentifier>{ff62a47f-4cef-4978-8b78-4f142d22416e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\client">
+      <UniqueIdentifier>{fd330676-48e6-468b-868b-31a94eb72176}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\server\Packets">
+      <UniqueIdentifier>{16a9a670-cb76-41d4-9a05-e3689406c17b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\server\Utils">
+      <UniqueIdentifier>{f5556b75-8ccb-453c-8ba1-542ce4719499}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\client\util">
+      <UniqueIdentifier>{910d3a89-d5f0-4eab-acef-ba939acfd9e9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="index.html">
+      <Filter>Source Files\client</Filter>
+    </None>
+    <None Include="client.js">
+      <Filter>Source Files\client</Filter>
+    </None>
+    <None Include="style.css">
+      <Filter>Source Files\client</Filter>
+    </None>
+    <None Include="Packet.js">
+      <Filter>Source Files\client\util</Filter>
+    </None>
+    <None Include="Keys.js">
+      <Filter>Source Files\client\util</Filter>
+    </None>
+    <None Include="Extras.js">
+      <Filter>Source Files\client\util</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="server.cpp">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="ws_handler.cpp">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="Packet.cpp">
+      <Filter>Source Files\server\Packets</Filter>
+    </ClCompile>
+    <ClCompile Include="file_utils.cpp">
+      <Filter>Source Files\server\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="GameState.cpp">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="DataStructs.cpp">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ws_handler.h">
+      <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="Packet.h">
+      <Filter>Source Files\server\Packets</Filter>
+    </ClInclude>
+    <ClInclude Include="file_utils.h">
+      <Filter>Source Files\server\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="GameState.h">
+      <Filter>Source Files\server</Filter>
+    </ClInclude>
+    <ClInclude Include="DataStructs.h">
+      <Filter>Source Files\server</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="..\..\..\..\Downloads\Ubuntu\Ubuntu-Bold.ttf">
+      <Filter>Source Files\client</Filter>
+    </Font>
+  </ItemGroup>
+</Project>

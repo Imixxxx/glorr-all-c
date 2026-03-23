@@ -1,0 +1,180 @@
+html, body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #1e1e1e;
+}
+
+@font-face {
+    font-family: 'Glorr';
+    font-style: normal;
+    font-weight: 700;
+    src: url('./Ubuntu-Bold.ttf') format('truetype');
+}
+
+div, span, input, textarea {
+    font-family: 'Glorr', 'Microsoft YaHei', sans-serif;
+    font-weight: 900;
+}
+
+
+
+
+#loading {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: #1e1e1e;
+    z-index: 999999;
+}
+
+
+
+
+
+
+
+[label] {
+    --stroke-size: 0.15em;
+    --label-size: 15px;
+    font-size: var(--label-size);
+    color: white;
+    position: relative;
+}
+[label]::after {
+    content: attr(label);
+    position: absolute;
+    color: inherit;
+    top: 0;
+    left: 0;
+}
+[label]::before {
+    content: attr(label);
+    -webkit-text-stroke: black var(--stroke-size);
+}
+
+
+
+
+
+.hidden {
+    display: none !important;
+}
+
+
+
+.glorr-btn {
+    width: 50px;
+    height: 50px;
+    position: relative;
+    background-color: rgb(130, 130, 130);
+    border: 5px solid rgb(102, 102, 102);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.glorr-btn::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+.glorr-btn:hover::before {
+    content: '';
+    background-color: rgb(255, 255, 255, 0.06);
+}
+.glorr-btn:active::before {
+    content: '';
+    background-color: rgb(0, 0, 0, 0.1);
+}
+
+
+.glorr-menu {
+    width: auto;
+    height: auto;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    box-sizing: border-box;
+
+/*    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;*/
+
+    background-color: rgb(130, 130, 130);
+    border: 8px solid rgb(102, 102, 102);
+    border-radius: 3px;
+
+    transition-property: top, left, bottom, right;
+    transition-duration: 0.3s;
+    transition-timing-function: ease;
+}
+.menu-bl {
+    top: 100px;
+}
+
+
+
+
+
+#btn-inventory {
+    background-color: rgb(30, 116, 237);
+    border-color: rgb(23, 90, 186);
+}
+
+#menu-inventory {
+    background-color: rgb(30, 116, 237);
+    border-color: rgb(23, 90, 186);
+    width: 350px;
+    height: 500px;
+}
+
+
+
+
+
+
+
+
+#bottom-left-container {
+    position: absolute;
+    bottom: 0;
+    width: auto;
+    height: auto;
+/*    background-color: black;*/
+    display: flex;
+    flex-direction: row;
+    align-items: end;
+    gap: 30px;
+    padding: 15px;
+}
+
+
+#botom-left-menu-btns {
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    height: auto;
+}
+
+#bottom-left-extras {
+    width: 300px;
+    height: 300px;
+/*    background-color: black;*/
+    display: flex;
+    flex-direction: column-reverse;
+}
+#bottom-left-menus {
+    position: absolute;
+    width: 0;
+    height: 0;
+/*    background-color: red;*/
+}
