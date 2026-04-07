@@ -1,6 +1,7 @@
 #pragma once
 #include <uwebsockets/App.h>
 #include <string_view>
+#include "DataStructs.h"
 
 
 class WsHandler {
@@ -12,7 +13,7 @@ public:
     };
 
     // Function to return WebSocket behavior
-    static uWS::App::WebSocketBehavior<UserData> getWebSocketBehavior(uWS::App& app);
+    static uWS::App::WebSocketBehavior<UserData> getWebSocketBehavior(uWS::App& app, Map &server_map);
 
 
     static void sendDeltaUpdates(uWS::App& app);

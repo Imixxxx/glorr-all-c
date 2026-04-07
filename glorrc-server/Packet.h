@@ -37,6 +37,16 @@ public:
         static InputState decode(const std::vector<uint8_t>& buffer);
     };
 
+
+
+
+    struct Map {
+        static std::vector<uint8_t> encode(
+            uint8_t messageType,
+            const ::Map& map
+        );
+    };
+
 private:
     template<typename T>
     static void write(std::vector<uint8_t>& buffer, const T& value);

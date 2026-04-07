@@ -146,7 +146,7 @@ export default class Packet {
 
             const buffer = new ArrayBuffer(2);
             const view = new DataView(buffer);
-
+            
             let offset = 0;
 
             // packet type
@@ -168,4 +168,65 @@ export default class Packet {
         }
 
     }
+
+    static MAP = class {
+        static decode(buffer) {
+            const view = new DataView(buffer);
+            let offset = 0;
+
+            // Packet type
+            const type = view.getUint8(offset);
+            offset += 1;
+
+            // Header
+            const width = view.getUint16(offset, true);
+            offset += 2;
+
+            const height = view.getUint16(offset, true);
+            offset += 2;
+
+            const tileSize = view.getUint16(offset, true);
+            offset += 2;
+
+            const spawnX = view.getUint16(offset, true);
+            offset += 2;
+
+            const spawnY = view.getUint16(offset, true);
+            offset += 2;
+
+            // Tile count
+            const tileCount = view.getUint32(offset, true);
+            offset += 4;
+
+            // Tiles
+            const tiles = [];
+
+            for (let i = 0; i < tileCount; i++) {
+                const packed = view.getUint8(offset);
+                offset += 1;
+
+                // Unpack bits
+                const solid = (packed >> 7) & 1;
+                const rotation = (packed >> 5) & 0b11;
+                const texture = packed & 0b11111;
+
+                tiles.push({
+                    solid: !!solid,
+                    rotation,
+                    texture
+                });
+            }
+
+            return {
+                type,
+                data: {
+                    width,
+                    height,
+                    tileSize,
+                    spawn: { x: spawnX, y: spawnY },
+                    tiles
+                }
+            };
+        }
+    };
 }

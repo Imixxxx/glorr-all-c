@@ -49,6 +49,23 @@ setTimeout(() => {
 
 
 
+const tileTextures = [
+    PIXI.Texture.from("grass.svg"),
+    PIXI.Texture.from("wall_edge.svg"),
+    PIXI.Texture.from("wall_corner_inner.svg")
+]
+
+
+// Containers
+const renderContainers = {
+    players: new PIXI.Container(),
+    tiles: new PIXI.container()
+}
+for (const name in renderContainers) {
+    app.stage.addChild(renderContainers[name])
+}
+
+
 
 
 function packetEvent(buffer) {
@@ -124,6 +141,13 @@ function packetEvent(buffer) {
             break;
         }
 
+        case 5: {
+            const packet = Packet.MAP.decode(buffer);
+            console.log("Received server map")
+
+            break;
+        }
+
         default: {
             console.warn("Unknown packet type:", type);
         }
@@ -165,9 +189,9 @@ const Entities = {
         return pos;
     },
     worldToScreen(x, y) {
-        const ref = this.clientPos();
-        const relativeX = x - ref.x;
-        const relativeY = y - ref.y;
+        //const ref = this.clientPos();
+        const relativeX = x //- ref.x;
+        const relativeY = y //- ref.y;
 
         return Extras.worldCenter(relativeX, relativeY);
     },
@@ -177,7 +201,7 @@ const Entities = {
     remPlayer(id) {
         if (this.players.has(id)) {
             const sprite = this.players.get(id);
-            app.stage.removeChild(sprite);
+            renderContainers.players.removeChild(sprite);
             this.players.delete(id);
         }
     },
@@ -193,13 +217,14 @@ const Entities = {
 
         this.updPlayer(player);
 
-        app.stage.addChild(graphics);
+        renderContainers.players.addChild(graphics);
     },
 
     // Update a single player sprite
     updPlayer(player) {
         const sprite = this.players.get(player.id);
         this.updateScreenPosition(sprite, player);
+        
 
         sprite["__orig_data"] = {
             id: player.id,
@@ -218,10 +243,11 @@ const Entities = {
 
     // Convert world data to screen position and apply to sprite
     updateScreenPosition(sprite, data) {
-        let pos = Extras.worldCenter(0, 0);
+        const pos = this.worldToScreen(data.x, data.y);
 
-        if (data.id != this.clientId) {
-            pos = this.worldToScreen(data.x, data.y);
+        if (data.id == this.clientId) {
+            renderContainers.players.x = -data.x
+            renderContainers.players.y = data.y
         }
 
         sprite.x = pos.x;

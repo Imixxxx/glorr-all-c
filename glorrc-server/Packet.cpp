@@ -86,6 +86,46 @@ InputState Packet::Input::decode(const std::vector<uint8_t>& buffer)
 
 
 
+std::vector<uint8_t> Packet::Map::encode(
+    uint8_t messageType,
+    const ::Map& map)
+{
+    std::vector<uint8_t> buffer;
+
+    // Message type
+    buffer.push_back(messageType);
+
+    // Header
+    write(buffer, map.width);
+    write(buffer, map.height);
+    write(buffer, map.tile_size);
+    write(buffer, map.spawn_x);
+    write(buffer, map.spawn_y);
+
+    // Tile count (important so client knows how many to read)
+    uint32_t tileCount = (uint32_t)map.tiles.size();
+    write(buffer, tileCount);
+
+    // Pack tile into 1 byte
+    auto packTile = [](const Tile& tile) -> uint8_t {
+        return (tile.solid << 7) |
+            ((tile.rotation & 0b11) << 5) |
+            (tile.texture & 0b11111);
+        };
+
+    // Tiles
+    for (const Tile& tile : map.tiles)
+    {
+        buffer.push_back(packTile(tile));
+    }
+
+    return buffer;
+}
+
+
+
+
+
 // Simple Types
 
 std::vector<uint8_t> Packet::UInt16::encode(

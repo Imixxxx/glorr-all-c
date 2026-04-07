@@ -109,6 +109,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -126,6 +127,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -138,11 +140,21 @@
     <ClCompile Include="DataStructs.cpp" />
     <ClCompile Include="file_utils.cpp" />
     <ClCompile Include="GameState.cpp" />
+    <ClCompile Include="MapLoader.cpp" />
     <ClCompile Include="Packet.cpp" />
     <ClCompile Include="server.cpp" />
     <ClCompile Include="ws_handler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\grass.svg" />
+    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_center.svg" />
+    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_corner_inner.svg" />
+    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_corner_outer.svg" />
+    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_edge.svg" />
+    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_solo.svg" />
+    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_solo_corner_inner.svg" />
+    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_solo_corner_outer.svg" />
+    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_solo_edge.svg" />
     <None Include="client.js" />
     <None Include="Extras.js" />
     <None Include="index.html" />
@@ -154,6 +166,7 @@
     <ClInclude Include="DataStructs.h" />
     <ClInclude Include="file_utils.h" />
     <ClInclude Include="GameState.h" />
+    <ClInclude Include="MapLoader.h" />
     <ClInclude Include="Packet.h" />
     <ClInclude Include="ws_handler.h" />
   </ItemGroup>

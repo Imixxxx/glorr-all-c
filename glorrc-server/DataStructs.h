@@ -1,6 +1,7 @@
 #pragma once
 #pragma once
 #include <cstdint>
+#include <vector>
 
 
 struct InputState {
@@ -20,6 +21,25 @@ struct Player {
     uint8_t health;
     uint8_t maxHealth;
     InputState inputs;
+};
+
+
+struct Tile {
+    uint8_t texture;   // 0–31
+    uint8_t rotation;  // 0–3
+    bool solid;        // true/false
+};
+
+struct Map {
+    uint16_t width, height, tile_size;
+    uint16_t spawn_x, spawn_y;
+
+    std::vector<Tile> tiles; // size = width * height
+
+    // Helper to access tiles like grid
+    Tile& get(uint16_t x, uint16_t y) {
+        return tiles[y * width + x];
+    }
 };
 
 //struct ClientPlayer {

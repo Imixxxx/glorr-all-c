@@ -6,16 +6,26 @@
 #include <chrono>
 #include "file_utils.h"
 #include "ws_handler.h"
+#include "MapLoader.h"
 
 
 
 uWS::App* g_app = nullptr;
 
-int main() {
+int main(int argc, char* argv[]) {
+
+    std::string region = argv[1];
+    std::string map = argv[2];
+
+    //Map server_map = MapLoader::load_map("./maps/" + map + ".bin");
+    Map server_map = MapLoader::load_map("./maps/beta_map.bin");
+    std::cout << server_map.tile_size << std::endl;
+
+
     uWS::App app;
     g_app = &app;
 
-    app.ws("/ws", WsHandler::getWebSocketBehavior(app))
+    app.ws("/ws", WsHandler::getWebSocketBehavior(app, server_map))
         .get("/*", [](auto* res, auto* req) {
         std::string url = std::string(req->getUrl());
         if (url == "/") url = "/index.html";
@@ -26,7 +36,7 @@ int main() {
             res->writeStatus("404 Not Found")->end("File not found!");
             return;
         }
-
+        
         res->writeHeader("Content-Type", getContentType(filePath))->end(content);
             })
         .listen(9001, [](auto* token) {

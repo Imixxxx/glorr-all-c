@@ -10,6 +10,7 @@
 static uint16_t nextId = 1;
 static std::queue<uint16_t> freeIds;
 
+std::vector<uint8_t> cachedServerMap;
 
 
 
@@ -28,6 +29,10 @@ void handleJoin(auto* ws, uWS::App& app) {
     // Send ws id to the client
     std::vector<uint8_t> buffer = Packet::UInt16::encode(0, id);
     ws->send(Packet::toStringView(buffer), uWS::OpCode::BINARY);
+
+
+    // Send server map to the client
+    ws->send(Packet::toStringView(cachedServerMap), uWS::OpCode::BINARY);
 
 
     // Send players snapshot to joined player
@@ -90,7 +95,10 @@ void handleInputState(auto *ws, std::vector<uint8_t> buffer) {
 
 
 
-uWS::App::WebSocketBehavior<WsHandler::UserData> WsHandler::getWebSocketBehavior(uWS::App &app) {
+uWS::App::WebSocketBehavior<WsHandler::UserData> WsHandler::getWebSocketBehavior(uWS::App &app, Map &server_map) {
+
+    cachedServerMap = Packet::Map::encode(5, server_map);
+
     return uWS::App::WebSocketBehavior<WsHandler::UserData>{
 
         .open = [](auto* ws) {
