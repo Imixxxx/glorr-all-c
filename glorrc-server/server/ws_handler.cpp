@@ -1,6 +1,6 @@
 #include "ws_handler.h"
 #include "GameState.h"
-#include "Packet.h"
+#include "./packet/Packet.h"
 #include <vector>
 #include <iostream>
 #include <uwebsockets/App.h>
@@ -215,11 +215,10 @@ void WsHandler::sendFullSnapshot(uWS::App& app) {
 
 
 void WsHandler::gameLoop(uWS::App& app) {
-
     std::vector<Player>& players = GameState::getPlayers();
 
     const float accel = GameState::Constants::Player::Acceleration;
-    const float friction = GameState::Constants::World::Friction;
+    const float decel = GameState::Constants::Player::Deceleration;
     const float maxSpeed = GameState::Constants::Player::MaxSpeed;
 
     for (auto& player : players) {
@@ -239,21 +238,30 @@ void WsHandler::gameLoop(uWS::App& app) {
             iy /= length;
         }
 
-        // Apply acceleration
+        // --- Accelerate based on input ---
         player.vx += ix * accel;
         player.vy += iy * accel;
 
-        // Clamp velocity
-        player.vx = std::clamp(player.vx, -maxSpeed, maxSpeed);
-        player.vy = std::clamp(player.vy, -maxSpeed, maxSpeed);
+        // --- Apply deceleration if no input ---
+        if (ix == 0.0f) {
+            if (player.vx > 0) player.vx = std::max(0.0f, player.vx - decel);
+            else if (player.vx < 0) player.vx = std::min(0.0f, player.vx + decel);
+        }
+        if (iy == 0.0f) {
+            if (player.vy > 0) player.vy = std::max(0.0f, player.vy - decel);
+            else if (player.vy < 0) player.vy = std::min(0.0f, player.vy + decel);
+        }
 
-        // Apply velocity to position
+        // --- Clamp total velocity to max speed (diagonal fix) ---
+        float speed = std::sqrt(player.vx * player.vx + player.vy * player.vy);
+        if (speed > maxSpeed) {
+            player.vx = (player.vx / speed) * maxSpeed;
+            player.vy = (player.vy / speed) * maxSpeed;
+        }
+
+        // --- Apply position ---
         player.x += player.vx;
         player.y += player.vy;
-
-        // Apply friction
-        player.vx *= friction;
-        player.vy *= friction;
     }
 
     sendDeltaUpdates(app);

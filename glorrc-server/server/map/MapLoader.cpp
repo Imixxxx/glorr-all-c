@@ -1,13 +1,13 @@
 #include "MapLoader.h"
-#include "DataStructs.h"
+#include "../DataStructs.h"
 #include <fstream>
 #include <stdexcept>
 
+// Decode a tile from 1 byte (ignore top bit)
 static Tile decode_tile(uint8_t byte) {
     Tile t;
-    t.solid = (byte >> 7) & 1;
-    t.rotation = (byte >> 5) & 0b11;
-    t.texture = byte & 0b11111;
+    t.rotation = (byte >> 5) & 0b11;  // bits 6-5
+    t.texture = byte & 0b11111;      // bits 4-0
     return t;
 }
 
@@ -17,7 +17,7 @@ Map MapLoader::load_map(const std::string& path) {
 
     Map map;
 
-    // Header (same as before except no wall_count)
+    // Header
     file.read(reinterpret_cast<char*>(&map.width), sizeof(uint16_t));
     file.read(reinterpret_cast<char*>(&map.height), sizeof(uint16_t));
     file.read(reinterpret_cast<char*>(&map.tile_size), sizeof(uint16_t));

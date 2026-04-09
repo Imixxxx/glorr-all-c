@@ -205,13 +205,11 @@ export default class Packet {
                 const packed = view.getUint8(offset);
                 offset += 1;
 
-                // Unpack bits
-                const solid = (packed >> 7) & 1;
+                // Unpack bits (rotation + texture only)
                 const rotation = (packed >> 5) & 0b11;
                 const texture = packed & 0b11111;
 
                 tiles.push({
-                    solid: !!solid,
                     rotation,
                     texture
                 });

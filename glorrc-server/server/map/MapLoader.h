@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-#include "DataStructs.h"
+#include "../DataStructs.h"
 
 
 class MapLoader {

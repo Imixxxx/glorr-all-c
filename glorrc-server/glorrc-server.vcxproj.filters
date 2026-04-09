@@ -31,106 +31,68 @@
     <Filter Include="Source Files\server\packets">
       <UniqueIdentifier>{16a9a670-cb76-41d4-9a05-e3689406c17b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\client\assets">
-      <UniqueIdentifier>{327698ad-fad0-4776-840a-e1567ae0c905}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\client\assets\tiles">
-      <UniqueIdentifier>{ccfc64db-f961-4a4d-910f-c4af633699f7}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="index.html">
+    <None Include="client\index.html">
       <Filter>Source Files\client</Filter>
     </None>
-    <None Include="client.js">
+    <None Include="public\client.js">
       <Filter>Source Files\client</Filter>
     </None>
-    <None Include="style.css">
+    <None Include="client\style.css">
       <Filter>Source Files\client</Filter>
     </None>
-    <None Include="Packet.js">
+    <None Include="public\Util\Packet.js">
       <Filter>Source Files\client\util</Filter>
     </None>
-    <None Include="Keys.js">
+    <None Include="public\Util\Keys.js">
       <Filter>Source Files\client\util</Filter>
     </None>
-    <None Include="Extras.js">
+    <None Include="public\Util\Extras.js">
       <Filter>Source Files\client\util</Filter>
-    </None>
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\grass.svg">
-      <Filter>Source Files\client\assets\tiles</Filter>
-    </None>
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_center.svg">
-      <Filter>Source Files\client\assets\tiles</Filter>
-    </None>
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_corner_inner.svg">
-      <Filter>Source Files\client\assets\tiles</Filter>
-    </None>
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_corner_outer.svg">
-      <Filter>Source Files\client\assets\tiles</Filter>
-    </None>
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_edge.svg">
-      <Filter>Source Files\client\assets\tiles</Filter>
-    </None>
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_solo.svg">
-      <Filter>Source Files\client\assets\tiles</Filter>
-    </None>
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_solo_corner_inner.svg">
-      <Filter>Source Files\client\assets\tiles</Filter>
-    </None>
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_solo_corner_outer.svg">
-      <Filter>Source Files\client\assets\tiles</Filter>
-    </None>
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_solo_edge.svg">
-      <Filter>Source Files\client\assets\tiles</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="server.cpp">
+    <ClCompile Include="server\server.cpp">
       <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="ws_handler.cpp">
+    <ClCompile Include="server\ws_handler.cpp">
       <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="Packet.cpp">
+    <ClCompile Include="server\packet\Packet.cpp">
       <Filter>Source Files\server\packets</Filter>
     </ClCompile>
-    <ClCompile Include="file_utils.cpp">
+    <ClCompile Include="server\util\file_utils.cpp">
       <Filter>Source Files\server\utils</Filter>
     </ClCompile>
-    <ClCompile Include="GameState.cpp">
+    <ClCompile Include="server\GameState.cpp">
       <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="DataStructs.cpp">
+    <ClCompile Include="server\DataStructs.cpp">
       <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="MapLoader.cpp">
+    <ClCompile Include="server\map\MapLoader.cpp">
       <Filter>Source Files\server\maps</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ws_handler.h">
+    <ClInclude Include="server\ws_handler.h">
       <Filter>Source Files\server</Filter>
     </ClInclude>
-    <ClInclude Include="Packet.h">
+    <ClInclude Include="server\packet\Packet.h">
       <Filter>Source Files\server\packets</Filter>
     </ClInclude>
-    <ClInclude Include="file_utils.h">
+    <ClInclude Include="server\util\file_utils.h">
       <Filter>Source Files\server\utils</Filter>
     </ClInclude>
-    <ClInclude Include="GameState.h">
+    <ClInclude Include="server\GameState.h">
       <Filter>Source Files\server</Filter>
     </ClInclude>
-    <ClInclude Include="DataStructs.h">
+    <ClInclude Include="server\DataStructs.h">
       <Filter>Source Files\server</Filter>
     </ClInclude>
-    <ClInclude Include="MapLoader.h">
+    <ClInclude Include="server\map\MapLoader.h">
       <Filter>Source Files\server\maps</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Font Include="..\..\..\..\Downloads\Ubuntu\Ubuntu-Bold.ttf">
-      <Filter>Source Files\client</Filter>
-    </Font>
   </ItemGroup>
 </Project>

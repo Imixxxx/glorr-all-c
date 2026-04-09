@@ -137,41 +137,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="DataStructs.cpp" />
-    <ClCompile Include="file_utils.cpp" />
-    <ClCompile Include="GameState.cpp" />
-    <ClCompile Include="MapLoader.cpp" />
-    <ClCompile Include="Packet.cpp" />
-    <ClCompile Include="server.cpp" />
-    <ClCompile Include="ws_handler.cpp" />
+    <ClCompile Include="server\DataStructs.cpp" />
+    <ClCompile Include="server\util\file_utils.cpp" />
+    <ClCompile Include="server\GameState.cpp" />
+    <ClCompile Include="server\map\MapLoader.cpp" />
+    <ClCompile Include="server\packet\Packet.cpp" />
+    <ClCompile Include="server\server.cpp" />
+    <ClCompile Include="server\ws_handler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\grass.svg" />
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_center.svg" />
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_corner_inner.svg" />
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_corner_outer.svg" />
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_edge.svg" />
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_solo.svg" />
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_solo_corner_inner.svg" />
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_solo_corner_outer.svg" />
-    <None Include="..\..\..\..\Documents\Code\Javascript\Multiplayer\floret2026\src\assets\tiles\wall_solo_edge.svg" />
-    <None Include="client.js" />
-    <None Include="Extras.js" />
-    <None Include="index.html" />
-    <None Include="Keys.js" />
-    <None Include="Packet.js" />
-    <None Include="style.css" />
+    <None Include="public\client.js" />
+    <None Include="public\Util\Extras.js" />
+    <None Include="client\index.html" />
+    <None Include="public\Util\Keys.js" />
+    <None Include="public\Util\Packet.js" />
+    <None Include="client\style.css" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DataStructs.h" />
-    <ClInclude Include="file_utils.h" />
-    <ClInclude Include="GameState.h" />
-    <ClInclude Include="MapLoader.h" />
-    <ClInclude Include="Packet.h" />
-    <ClInclude Include="ws_handler.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Font Include="..\..\..\..\Downloads\Ubuntu\Ubuntu-Bold.ttf" />
+    <ClInclude Include="server\DataStructs.h" />
+    <ClInclude Include="server\util\file_utils.h" />
+    <ClInclude Include="server\GameState.h" />
+    <ClInclude Include="server\map\MapLoader.h" />
+    <ClInclude Include="server\packet\Packet.h" />
+    <ClInclude Include="server\ws_handler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

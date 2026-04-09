@@ -1,8 +1,6 @@
 #pragma once
-#pragma once
 #include <cstdint>
 #include <vector>
-
 
 struct InputState {
     bool w = false;
@@ -10,7 +8,6 @@ struct InputState {
     bool s = false;
     bool d = false;
 };
-
 
 struct Player {
     uint32_t id;
@@ -23,11 +20,10 @@ struct Player {
     InputState inputs;
 };
 
-
 struct Tile {
     uint8_t texture;   // 0–31
     uint8_t rotation;  // 0–3
-    bool solid;        // true/false
+    // bool solid;      // Removed
 };
 
 struct Map {
@@ -41,15 +37,3 @@ struct Map {
         return tiles[y * width + x];
     }
 };
-
-//struct ClientPlayer {
-//    float x;
-//    float y;
-//    uint8_t health;
-//    uint8_t maxHealth;
-//};
-
-//class ConvertStruct {
-//public:
-//    static ClientPlayer toClientPlayer(const Player& p);
-//};

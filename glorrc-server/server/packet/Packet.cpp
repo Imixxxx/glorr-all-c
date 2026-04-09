@@ -1,7 +1,7 @@
 #include "Packet.h"
 #include <cstring>
 #include <string_view>
-#include "DataStructs.h"
+#include "../DataStructs.h"
 
 template<typename T>
 void Packet::write(std::vector<uint8_t>& buffer, const T& value)
@@ -102,18 +102,16 @@ std::vector<uint8_t> Packet::Map::encode(
     write(buffer, map.spawn_x);
     write(buffer, map.spawn_y);
 
-    // Tile count (important so client knows how many to read)
+    // Tile count
     uint32_t tileCount = (uint32_t)map.tiles.size();
     write(buffer, tileCount);
 
-    // Pack tile into 1 byte
+    // Pack tile into 1 byte (texture + rotation only)
     auto packTile = [](const Tile& tile) -> uint8_t {
-        return (tile.solid << 7) |
-            ((tile.rotation & 0b11) << 5) |
+        return ((tile.rotation & 0b11) << 5) |
             (tile.texture & 0b11111);
         };
 
-    // Tiles
     for (const Tile& tile : map.tiles)
     {
         buffer.push_back(packTile(tile));

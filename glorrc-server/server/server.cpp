@@ -1,12 +1,12 @@
 #include <uwebsockets/App.h>
 #include "GameState.h"
-#include "Packet.h"
+#include "./packet/Packet.h"
 #include <iostream>
 #include <thread>
 #include <chrono>
-#include "file_utils.h"
+#include "./util/file_utils.h"
 #include "ws_handler.h"
-#include "MapLoader.h"
+#include "./map/MapLoader.h"
 
 
 
@@ -18,8 +18,19 @@ int main(int argc, char* argv[]) {
     std::string map = argv[2];
 
     //Map server_map = MapLoader::load_map("./maps/" + map + ".bin");
-    Map server_map = MapLoader::load_map("./maps/beta_map.bin");
+    Map server_map = MapLoader::load_map("./server/map/binary/beta_garden.bin");
     std::cout << server_map.tile_size << std::endl;
+    // Set world spawn for gamestate
+    GameState::setWorldSpawn(//50, 50
+        server_map.spawn_x, // spawn_x
+        server_map.spawn_y // spawn_y
+    );
+
+    // Old spawn setter, uses grid units and converts to pixels
+    //GameState::setWorldSpawn(
+    //    server_map.spawn_x * server_map.tile_size, // spawn_x
+    //    -(server_map.spawn_x * server_map.tile_size) // spawn_y
+    //);
 
 
     uWS::App app;
@@ -29,7 +40,7 @@ int main(int argc, char* argv[]) {
         .get("/*", [](auto* res, auto* req) {
         std::string url = std::string(req->getUrl());
         if (url == "/") url = "/index.html";
-        std::string filePath = "." + url;
+        std::string filePath = "./client" + url;
 
         std::string content = loadFile(filePath);
         if (content.empty()) {
