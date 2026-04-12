@@ -1,7 +1,7 @@
 #pragma once
 #include <uwebsockets/App.h>
 #include <string_view>
-#include "DataStructs.h"
+#include "./map/Map.h"
 
 
 class WsHandler {
@@ -15,10 +15,12 @@ public:
     // Function to return WebSocket behavior
     static uWS::App::WebSocketBehavior<UserData> getWebSocketBehavior(uWS::App& app, Map &server_map);
 
+    static std::unordered_map<uint16_t, uWS::WebSocket<false, true, UserData>*> connections;
 
-    static void sendDeltaUpdates(uWS::App& app);
 
-    static void sendFullSnapshot(uWS::App& app);
+    static void sendChunkDeltaUpdates();
+
+    static void sendFullSnapshot();
 
     static void gameLoop(uWS::App& app);
 };

@@ -1,7 +1,8 @@
 #pragma once
 #include <vector>
 #include <cstdint>
-#include "../DataStructs.h"
+#include "../_types/GameTypes.h"
+#include "../map/Map.h"
 #include <string_view>
 
 
@@ -25,6 +26,17 @@ public:
             const std::vector<::Player>& players
         );
     };
+
+
+
+    struct PlayerServerStatus {
+        static std::vector<uint8_t> encode(
+            uint8_t messageType,
+            uint16_t playerId
+        );
+    };
+
+
 
     struct UInt16 {
         static std::vector<uint8_t> encode(

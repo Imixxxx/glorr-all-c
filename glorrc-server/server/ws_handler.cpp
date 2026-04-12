@@ -1,6 +1,8 @@
 #include "ws_handler.h"
 #include "GameState.h"
 #include "./packet/Packet.h"
+#include "./map/Map.h"
+#include "./chunk/ChunkCoord.h"
 #include <vector>
 #include <iostream>
 #include <uwebsockets/App.h>
@@ -13,6 +15,7 @@ static std::queue<uint16_t> freeIds;
 std::vector<uint8_t> cachedServerMap;
 
 
+std::unordered_map<uint16_t, uWS::WebSocket<false, true, WsHandler::UserData>*> WsHandler::connections;
 
 
 
@@ -49,8 +52,8 @@ void handleJoin(auto* ws, uWS::App& app) {
     ws->subscribe("game");
 
 
-    // Publish spawn packet to all players
-    std::vector<uint8_t> buffer2 = Packet::Player::encode(2, player);
+    // Publish join packet to all players
+    std::vector<uint8_t> buffer2 = Packet::PlayerServerStatus::encode(6, player.id);
     app.publish("game", Packet::toStringView(buffer2), uWS::OpCode::BINARY);
 
     std::cout << "Player joined with id: " << id << std::endl;
@@ -73,7 +76,7 @@ void handleLeave(auto* ws, uWS::App& app) {
 
 
     // Publish leave packet to all players
-    std::vector<uint8_t> buffer = Packet::UInt16::encode(3, id);
+    std::vector<uint8_t> buffer = Packet::PlayerServerStatus::encode(7, id);
     app.publish("game", Packet::toStringView(buffer), uWS::OpCode::BINARY);
 
 
@@ -117,6 +120,9 @@ uWS::App::WebSocketBehavior<WsHandler::UserData> WsHandler::getWebSocketBehavior
             ws->getUserData()->joined = false;
 
 
+            connections[id] = ws;
+
+
             std::cout << "Client connected with id: " << id << std::endl;
         },
 
@@ -149,6 +155,8 @@ uWS::App::WebSocketBehavior<WsHandler::UserData> WsHandler::getWebSocketBehavior
             
             handleLeave(ws, app);
 
+            connections.erase(id);
+
             
             freeIds.push(id);
             
@@ -161,68 +169,114 @@ uWS::App::WebSocketBehavior<WsHandler::UserData> WsHandler::getWebSocketBehavior
 
 
 
-void WsHandler::sendDeltaUpdates(uWS::App& app) {
+void WsHandler::sendChunkDeltaUpdates() {
     if (GameState::getOldPlayers().empty()) {
         GameState::snapshotPlayers();
         return;
     }
 
+
     std::vector<Player>& players = GameState::getPlayers();
-    std::vector<Player>& oldPlayers = GameState::getOldPlayers();
 
-    // Check for any changes (deltas)
-    std::vector<Player> deltaUpdates;
     for (const Player& player : players) {
-        Player* oldPlayer = GameState::getOldPlayer(player.id);
 
-        // New player joined this tick
-        if (!oldPlayer) continue;
 
-        if (
-            player.x != oldPlayer->x
-            || player.y != oldPlayer->y
-            || player.health != oldPlayer->health
-            || player.maxHealth != oldPlayer->maxHealth
-            )
-        {
-            deltaUpdates.push_back(player);
+        std::vector<const Player*> playersInChunk = GameState::getVisiblePlayers(player.id);
+        std::vector<Player>& oldPlayers = GameState::getOldPlayers();
+
+        // Check for any changes (deltas)
+        std::vector<Player> deltaUpdates;
+        for (const Player* pl : playersInChunk) {
+
+
+            Player* oldPlayer = GameState::getOldPlayer(pl->id);
+
+            // New player joined this tick
+            if (!oldPlayer) continue;
+
+            if (
+                pl->x != oldPlayer->x
+                || pl->y != oldPlayer->y
+                || pl->health != oldPlayer->health
+                || pl->maxHealth != oldPlayer->maxHealth
+                )
+            {
+                deltaUpdates.push_back(*pl);
+            }
         }
+
+
+
+        // Send delta players as a snapshot (only if not empty)
+        if (!deltaUpdates.empty()) {
+            
+
+            auto it = connections.find(player.id);
+            if (it != connections.end()) {
+                uWS::WebSocket<false, true, WsHandler::UserData>* ws = it->second;
+                std::vector<uint8_t> buffer = Packet::Players::encode(4, deltaUpdates);
+                ws->send(Packet::toStringView(buffer), uWS::OpCode::BINARY);
+            }
+
+            //app.publish("game", Packet::toStringView(buffer), uWS::OpCode::BINARY);
+        }
+
+
     }
 
-
-
-    // Send delta players as a snapshot (only if not empty)
-    if (!deltaUpdates.empty()) {
-        std::vector<uint8_t> buffer = Packet::Players::encode(4, deltaUpdates);
-        app.publish("game", Packet::toStringView(buffer), uWS::OpCode::BINARY);
-    }
+    
 
 
 
     GameState::snapshotPlayers();
 }
 
-void WsHandler::sendFullSnapshot(uWS::App& app) {
+void WsHandler::sendFullSnapshot() {
+    std::vector<Player>& allPlayers = GameState::getPlayers();
 
+    for (const Player& player : allPlayers) {
+        auto it = connections.find(player.id);
+        if (it != connections.end()) {
+            uWS::WebSocket<false, true, WsHandler::UserData>* ws = it->second;
 
-    // Send all players as a snapshot
-    std::vector<Player>& players = GameState::getPlayers();
-    std::vector<uint8_t> buffer = Packet::Players::encode(1, players);
-    app.publish("game", Packet::toStringView(buffer), uWS::OpCode::BINARY);
+            // 1. Get the list of pointers (fast)
+            std::vector<const Player*> ptrs = GameState::getVisiblePlayers(player.id);
 
+            // 2. Convert pointers back to objects to satisfy the encoder
+            std::vector<Player> playersToEncode;
+            playersToEncode.reserve(ptrs.size()); // Optimization: reserve memory upfront
+            for (const Player* p : ptrs) {
+                if (p) playersToEncode.push_back(*p); // The '*' dereferences the pointer to a copy
+            }
+
+            // 3. Encode and send
+            std::vector<uint8_t> buffer = Packet::Players::encode(1, playersToEncode);
+            ws->send(Packet::toStringView(buffer), uWS::OpCode::BINARY);
+        }
+    }
 }
 
 
 
-void WsHandler::gameLoop(uWS::App& app) {
+void WsHandler::gameLoop(uWS::App& app)
+{
     std::vector<Player>& players = GameState::getPlayers();
 
     const float accel = GameState::Constants::Player::Acceleration;
     const float decel = GameState::Constants::Player::Deceleration;
     const float maxSpeed = GameState::Constants::Player::MaxSpeed;
 
-    for (auto& player : players) {
-        // Compute input vector
+    for (auto& player : players)
+    {
+        // -----------------------------
+        // Store old position
+        // -----------------------------
+        player.oldX = player.x;
+        player.oldY = player.y;
+
+        // -----------------------------
+        // Input
+        // -----------------------------
         float ix = 0.0f;
         float iy = 0.0f;
 
@@ -231,38 +285,81 @@ void WsHandler::gameLoop(uWS::App& app) {
         if (player.inputs.a) ix -= 1.0f;
         if (player.inputs.d) ix += 1.0f;
 
-        // Normalize input vector if diagonal
         float length = std::sqrt(ix * ix + iy * iy);
-        if (length > 1.0f) {
+        if (length > 1.0f)
+        {
             ix /= length;
             iy /= length;
         }
 
-        // --- Accelerate based on input ---
+        // -----------------------------
+        // Acceleration
+        // -----------------------------
         player.vx += ix * accel;
         player.vy += iy * accel;
 
-        // --- Apply deceleration if no input ---
-        if (ix == 0.0f) {
+        // -----------------------------
+        // Deceleration
+        // -----------------------------
+        if (ix == 0.0f)
+        {
             if (player.vx > 0) player.vx = std::max(0.0f, player.vx - decel);
             else if (player.vx < 0) player.vx = std::min(0.0f, player.vx + decel);
         }
-        if (iy == 0.0f) {
+
+        if (iy == 0.0f)
+        {
             if (player.vy > 0) player.vy = std::max(0.0f, player.vy - decel);
             else if (player.vy < 0) player.vy = std::min(0.0f, player.vy + decel);
         }
 
-        // --- Clamp total velocity to max speed (diagonal fix) ---
+        // -----------------------------
+        // Speed clamp
+        // -----------------------------
         float speed = std::sqrt(player.vx * player.vx + player.vy * player.vy);
-        if (speed > maxSpeed) {
+        if (speed > maxSpeed)
+        {
             player.vx = (player.vx / speed) * maxSpeed;
             player.vy = (player.vy / speed) * maxSpeed;
         }
 
-        // --- Apply position ---
+        // -----------------------------
+        // Movement
+        // -----------------------------
         player.x += player.vx;
         player.y += player.vy;
+
+        // -----------------------------
+        // CHUNK UPDATE (CLEAN VERSION)
+        // -----------------------------
+        auto [oldCx, oldCy] = ChunkCoord::getChunkCoord(player.oldX, player.oldY);
+        auto [newCx, newCy] = ChunkCoord::getChunkCoord(player.x, player.y);
+
+
+        
+
+
+        long long oldKey = GameState::getChunkKey(oldCx, oldCy);
+        long long newKey = GameState::getChunkKey(newCx, newCy);
+
+        GameState::movePlayerChunk(player.id, oldKey, newKey);
     }
 
-    sendDeltaUpdates(app);
+    sendChunkDeltaUpdates();
+
+
+
+
+    // Chunk info debug logging
+    
+    /*static int tick = 0;
+    tick++;
+
+    if (tick % 60 == 0)
+    {
+        GameState::debugChunks();
+    }*/
+
+
+    
 }

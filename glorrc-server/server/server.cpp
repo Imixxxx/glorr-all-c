@@ -1,6 +1,7 @@
 #include <uwebsockets/App.h>
 #include "GameState.h"
 #include "./packet/Packet.h"
+#include "chunk/ChunkCoord.h"
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -19,11 +20,16 @@ int main(int argc, char* argv[]) {
 
     //Map server_map = MapLoader::load_map("./maps/" + map + ".bin");
     Map server_map = MapLoader::load_map("./server/map/binary/beta_garden.bin");
-    std::cout << server_map.tile_size << std::endl;
+    //std::cout << server_map.tile_size << std::endl;
+    
     // Set world spawn for gamestate
-    GameState::setWorldSpawn(//50, 50
+    GameState::setWorldSpawn(//0, 0
         server_map.spawn_x, // spawn_x
         server_map.spawn_y // spawn_y
+    );
+    GameState::setMapChunkSize(
+        (server_map.width + ChunkCoord::CHUNK_TILE_SIZE - 1) / ChunkCoord::CHUNK_TILE_SIZE,
+        (server_map.height + ChunkCoord::CHUNK_TILE_SIZE - 1) / ChunkCoord::CHUNK_TILE_SIZE
     );
 
     // Old spawn setter, uses grid units and converts to pixels
@@ -72,7 +78,7 @@ int main(int argc, char* argv[]) {
 
         fullSnapshotAccumulator += 1000 / 60;
         if (fullSnapshotAccumulator >= fullSnapshotInterval) {
-            WsHandler::sendFullSnapshot(*g_app);
+            WsHandler::sendFullSnapshot();
             fullSnapshotAccumulator = 0;
         }
 

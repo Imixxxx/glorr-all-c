@@ -1,13 +1,13 @@
 #include "MapLoader.h"
-#include "../DataStructs.h"
 #include <fstream>
 #include <stdexcept>
 
-// Decode a tile from 1 byte (ignore top bit)
-static Tile decode_tile(uint8_t byte) {
+// Decode a tile from 2 bytes (uint16)
+static Tile decode_tile(uint16_t value) {
     Tile t;
-    t.rotation = (byte >> 5) & 0b11;  // bits 6-5
-    t.texture = byte & 0b11111;      // bits 4-0
+    t.texture = value & 0b11111;
+    t.rotation = (value >> 5) & 0b11;
+    t.underlay = (value >> 7) & 0b11111;
     return t;
 }
 
@@ -17,7 +17,7 @@ Map MapLoader::load_map(const std::string& path) {
 
     Map map;
 
-    // Header
+    // Header (same as encoder: uint16_t each)
     file.read(reinterpret_cast<char*>(&map.width), sizeof(uint16_t));
     file.read(reinterpret_cast<char*>(&map.height), sizeof(uint16_t));
     file.read(reinterpret_cast<char*>(&map.tile_size), sizeof(uint16_t));
@@ -26,17 +26,17 @@ Map MapLoader::load_map(const std::string& path) {
 
     if (!file) throw std::runtime_error("Failed reading map header");
 
-    // Allocate tiles
     size_t tileCount = map.width * map.height;
     map.tiles.resize(tileCount);
 
-    // Read tiles
+    // NOW READ 2 BYTES PER TILE
     for (size_t i = 0; i < tileCount; ++i) {
-        uint8_t byte;
-        file.read(reinterpret_cast<char*>(&byte), sizeof(uint8_t));
+        uint16_t value;
+        file.read(reinterpret_cast<char*>(&value), sizeof(uint16_t));
+
         if (!file) throw std::runtime_error("Failed reading tile data");
 
-        map.tiles[i] = decode_tile(byte);
+        map.tiles[i] = decode_tile(value);
     }
 
     return map;

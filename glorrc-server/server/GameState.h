@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
-#include "DataStructs.h"
+#include "./_types/GameTypes.h"
+#include <unordered_map>
 
 class GameState {
 public:
@@ -39,6 +40,34 @@ public:
     static void snapshotPlayers();
     static Player* getOldPlayer(int id);
 
+    
+
+
+    static void setMapChunkSize(float w, float h);
+    
+    // Get chunk key from x,y
+    static long long getChunkKey(int cx, int cy);
+    // Get the chunk from player coordinates
+    static std::pair<int, int> getPlayerChunk(const Player& p);
+    // Get the chunk key from player chunk
+    static long long getChunkKeyFromPlayer(const Player& p);
+
+    // Chunk validity check
+    static bool isValidChunk(int cx, int cy);
+    // Get nearby chunks
+    static std::vector<long long> getNearbyChunks(int cx, int cy, int radius);
+    // Get visisble players for client
+    static std::vector<const Player*> getVisiblePlayers(int clientId);
+
+    static void debugChunks();
+
+
+    // Chunk getters & setters
+    static void addPlayerToChunk(int playerId, long long chunkKey);
+    static void removePlayerFromChunk(int playerId, long long chunkKey);
+    static void movePlayerChunk(int playerId, long long oldKey, long long newKey);
+
+
 private:
     static std::vector<Player> players;
     static std::vector<Player> oldPlayers;
@@ -46,4 +75,11 @@ private:
     // World spawn coordinates
     static float worldSpawnX;
     static float worldSpawnY;
+
+
+    // Chunks
+    static std::unordered_map<long long, std::vector<int>> chunks;
+
+    static float chunkMapWidth;
+    static float chunkMapHeight;
 };

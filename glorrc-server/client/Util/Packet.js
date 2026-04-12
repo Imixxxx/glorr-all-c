@@ -58,8 +58,8 @@ export default class Packet {
             const type = view.getUint8(offset);
             offset += 1;
 
-            const id = view.getUint32(offset, true);
-            offset += 4;
+            const id = view.getUint16(offset, true);
+            offset += 2;
 
             const x = view.getFloat32(offset, true);
             offset += 4;
@@ -92,8 +92,8 @@ export default class Packet {
             const players = [];
 
             for (let i = 0; i < count; i++) {
-                const id = view.getUint32(offset, true);
-                offset += 4;
+                const id = view.getUint16(offset, true);
+                offset += 2;
 
                 const x = view.getFloat32(offset, true);
                 offset += 4;
@@ -108,6 +108,24 @@ export default class Packet {
             }
 
             return { type, data: players };
+        }
+    }
+
+    static PLAYER_SERVER_STATUS = class {
+        static decode(buffer) {
+            const view = new DataView(buffer);
+            let offset = 0;
+
+            const type = view.getUint8(offset);
+            offset += 1;
+
+            const id = view.getUint16(offset, true); // little endian
+            offset += 2;
+
+            return {
+                type,
+                data: { id }
+            };
         }
     }
 
@@ -198,20 +216,21 @@ export default class Packet {
             const tileCount = view.getUint32(offset, true);
             offset += 4;
 
-            // Tiles
             const tiles = [];
 
+            // NOW 2 BYTES PER TILE
             for (let i = 0; i < tileCount; i++) {
-                const packed = view.getUint8(offset);
-                offset += 1;
+                const packed = view.getUint16(offset, true);
+                offset += 2;
 
-                // Unpack bits (rotation + texture only)
-                const rotation = (packed >> 5) & 0b11;
-                const texture = packed & 0b11111;
+                const texture = packed & 0b11111;        // bits 0–4
+                const rotation = (packed >> 5) & 0b11;   // bits 5–6
+                const underlay = (packed >> 7) & 0b11111;// bits 7–11
 
                 tiles.push({
+                    texture,
                     rotation,
-                    texture
+                    underlay
                 });
             }
 

@@ -1,4 +1,4 @@
-import * as PIXI from "pixi.js"
+﻿import * as PIXI from "pixi.js"
 import gsap from "gsap"
 
 import Packet from "./Util/Packet.js";
@@ -38,30 +38,53 @@ setTimeout(() => {
 //
 //
 
-await PIXI.Assets.load([
-    "./assets/tiles/grass.svg",                 // 0
-    "./assets/tiles/wall_corner_outer.svg",     // 1
-    "./assets/tiles/wall_corner_inner.svg",     // 2
-    "./assets/tiles/wall_edge.svg",             // 3
-    "./assets/tiles/wall_center.svg",           // 4
-    "./assets/tiles/wall_solo.svg",             // 5
-    "./assets/tiles/wall_solo_corner_inner.svg",// 6
-    "./assets/tiles/wall_solo_corner_outer.svg",// 7
-    "./assets/tiles/wall_solo_edge.svg"         // 8
-]);
-const tileTextures = [
-    PIXI.Texture.from("./assets/tiles/grass.svg"),                 // 0
-    PIXI.Texture.from("./assets/tiles/wall_corner_outer.svg"),     // 1
-    PIXI.Texture.from("./assets/tiles/wall_corner_inner.svg"),     // 2
-    PIXI.Texture.from("./assets/tiles/wall_edge.svg"),             // 3
-    PIXI.Texture.from("./assets/tiles/wall_center.svg"),           // 4
-    PIXI.Texture.from("./assets/tiles/wall_solo.svg"),             // 5
-    PIXI.Texture.from("./assets/tiles/wall_solo_corner_inner.svg"),// 6
-    PIXI.Texture.from("./assets/tiles/wall_solo_corner_outer.svg"),// 7
-    PIXI.Texture.from("./assets/tiles/wall_solo_edge.svg")         // 8
+
+const tileTextureSrcs = [
+    "./assets/tiles/grass.svg",
+    "./assets/tiles/wall_corner_outer.svg",
+    "./assets/tiles/new/dirt_tri_0.svg",
+    "./assets/tiles/new/dirt_l_0.svg",
+    "./assets/tiles/new/dirt_c_0.svg",
+    "./assets/tiles/wall_solo.svg",
+    "./assets/tiles/wall_solo_corner_inner.svg",
+    "./assets/tiles/wall_solo_corner_outer.svg",
+    "./assets/tiles/wall_solo_edge.svg"
 ];
 
+// build asset list with SVG scaling
+const tileAssets = tileTextureSrcs.map(src => ({
+    src,
+    data: {
+        resolution: 2
+    }
+}));
 
+await PIXI.Assets.load(tileAssets);
+
+const tileTextures = tileTextureSrcs.map(src => PIXI.Assets.get(src));
+
+
+
+
+
+
+
+// Initialise EntityData
+
+const cullBoxGap = 250
+const EntityData = {
+    players: new Map(), // store all player sprites
+
+    client: {
+        id: null,
+        cullBox: {
+            x: -cullBoxGap - window.innerWidth / 2,
+            y: -cullBoxGap - window.innerHeight / 2,
+            width: window.innerWidth + cullBoxGap * 2,
+            height: window.innerHeight + cullBoxGap * 2
+        }
+    }
+}
 
 
 
@@ -72,9 +95,16 @@ const tileTextures = [
 //
 //
 
-const mainOffsetContainer = new PIXI.Container();
-mainOffsetContainer.x = window.innerWidth / 2;
-mainOffsetContainer.y = window.innerHeight / 2;
+
+
+
+// Main World Container
+
+const worldContainer = new PIXI.Container();
+//worldContainer.scale.y = -1
+worldContainer.x = window.innerWidth / 2;
+worldContainer.y = window.innerHeight / 2;
+
 
 const renderContainers = {
     map: new PIXI.Container(),
@@ -83,23 +113,71 @@ const renderContainers = {
 Object.keys(renderContainers).forEach((name, index) => {
     const container = renderContainers[name];
     container.zIndex = index + 1; // loop number starting at 1
-    mainOffsetContainer.addChild(container);
+    worldContainer.addChild(container);
 });
-app.stage.addChild(mainOffsetContainer)
 
 
 
 
 
+// CullBox Debug
+//const cullBox = new PIXI.Graphics();
+//cullBox.zIndex = 5
+//cullBox.rect(EntityData.client.cullBox.x, EntityData.client.cullBox.y, EntityData.client.cullBox.width, EntityData.client.cullBox.height);
+//cullBox.stroke({
+//    color: 0xffffff,
+//    width: 6
+//});
+//worldContainer.addChild(cullBox)
+
+window.addEventListener('resize', () => {
+    EntityData.client.cullBox = {
+        x: -cullBoxGap - window.innerWidth / 2,
+        y: -cullBoxGap - window.innerHeight / 2,
+        width: window.innerWidth + cullBoxGap * 2,
+        height: window.innerHeight + cullBoxGap * 2
+    }
+    //cullBox.clear()
+    //cullBox.rect(EntityData.client.cullBox.x, EntityData.client.cullBox.y, EntityData.client.cullBox.width, EntityData.client.cullBox.height);
+    //cullBox.stroke({
+    //    color: 0xffffff,
+    //    width: 6
+    //});
+})
 
 
 
-// Initialise EntityData
 
-const EntityData = {
-    players: new Map(), // store all player sprites
-    clientId: null,     // set this to your client's id
-}
+
+// UI Debug Container
+
+const debugContainer = new PIXI.Container();
+const debugText = new PIXI.Text({
+    text: "Debug",
+    style: {
+        fill: 0xffffff,
+        stroke: {
+            color: 0x000000,
+            width: Extras.fslw(50)
+        },
+        fontSize: 50,
+        fontWeight: 900,
+        fontFamily: "Ubuntu"
+    }
+});
+debugText.x = 10;
+debugText.y = 10;
+
+debugContainer.addChild(debugText);
+
+
+
+
+app.stage.addChild(worldContainer)
+app.stage.addChild(debugContainer)
+
+
+
 
 
 
@@ -151,7 +229,7 @@ function packetEvent(buffer) {
             //console.log("Received client id packet: ", packet);
 
             // Save client id
-            EntityData.clientId = packet.data;
+            EntityData.client.id = packet.data;
 
             break;
         }
@@ -180,7 +258,7 @@ function packetEvent(buffer) {
 
         case 2: {
             const packet = Packet.PLAYER.decode(buffer);
-            //console.log("Received player spawn packet: ", packet);
+            //console.log("Received player enter chunk packet: ", packet);
 
             // Render the joined player
             EntityUtil.setPlayer(packet.data);
@@ -189,7 +267,7 @@ function packetEvent(buffer) {
 
         case 3: {
             const packet = Packet.UINT16.decode(buffer);
-            //console.log("Received player leave packet: ", packet);
+            //console.log("Received player leave chunk: ", packet);
 
             // Remove left player sprite
             EntityUtil.remPlayer(packet.data)
@@ -204,11 +282,27 @@ function packetEvent(buffer) {
             packet.data.forEach((p) => {
                 if (EntityData.players.has(p.id)) {
                     EntityUtil.updPlayer(p)
-                    if (p.id == EntityData.clientId) {
+                    if (p.id == EntityData.client.id) {
                         EntityUtil.updateScreenPositions(true);
                     }
                 }
             });
+            break;
+        }
+
+        case 6: {
+            const packet = Packet.PLAYER_SERVER_STATUS.decode(buffer);
+
+            console.log(`Player with id ${packet.data.id} joined the server`)
+
+            break;
+        }
+
+        case 7: {
+            const packet = Packet.PLAYER_SERVER_STATUS.decode(buffer);
+
+            console.log(`Player with id ${packet.data.id} left the server`)
+
             break;
         }
 
@@ -231,6 +325,9 @@ function packetEvent(buffer) {
 
 
 
+const MapData = {
+    tiles: []
+}
 
 //
 //
@@ -251,84 +348,119 @@ const MapUtil = {
             const row = Math.floor(i / width);
             const col = i % width;
 
-            // Calculate pixel position with center pivot
+            // Pixel position (centered)
             const x = col * tileSize + tileSize / 2;
             const y = row * tileSize + tileSize / 2;
 
-            const texture = tileTextures[tile.texture];
+            // -------------------------
+            // UNDERLAY TILE (if any)
+            // -------------------------
+            if (tile.underlay != null) {
+                const underTexture = tileTextures[tile.underlay] ?? tileTextures[0];
+
+                const underSprite = new PIXI.Sprite(underTexture);
+                underSprite.anchor.set(0.5);
+
+                underSprite.x = x;
+                underSprite.y = y;
+
+                // same scaling as main tile
+                underSprite.scale.set(tileSize / underTexture.orig.width);
+
+                // optional: usually underlay should NOT rotate
+                // (remove this line if you DO want it to rotate)
+                // underSprite.rotation = ...
+
+                renderContainers.map.addChild(underSprite);
+                tileSprites.push(underSprite);
+
+
+
+                MapData.tiles.push(underSprite)
+            }
+
+            // -------------------------
+            // MAIN TILE
+            // -------------------------
+            const texture = tileTextures[tile.texture] ?? tileTextures[0];
 
             const sprite = new PIXI.Sprite(texture);
-            sprite.anchor.set(0.5); // pivot center
+            sprite.anchor.set(0.5);
+
             sprite.x = x;
             sprite.y = y;
-            sprite.width = tileSize;
-            sprite.height = tileSize;
 
-            // Correct rotation
-            sprite.rotation = tile.rotation * (Math.PI / 2);
+            sprite.scale.set(tileSize / texture.orig.width);
 
-            sprite.solid = tile.solid;
+            sprite.rotation = (((tile.rotation ?? 0) + 3) % 4) * (Math.PI / 2);
+
+            sprite.solid = tile.solid ?? false;
 
             renderContainers.map.addChild(sprite);
             tileSprites.push(sprite);
+
+
+
+            MapData.tiles.push(sprite)
         }
 
         return tileSprites;
     }
-}
+};
 
 
 
 
-//
+
+
 //
 // - [ EntityUtil Func Encapsulator ]
 //
-//
-
 
 const EntityUtil = {
-    clientPos() {
-        const pos = {
-            x: 0,
-            y: 0
-        }
-        if (!this.clientId) return pos;
-        const sprite = EntityData.players.get(this.clientId);
-        if (!sprite) return pos;
-        const origData = sprite["__orig_data"];
-        if (!origData) return pos;
-        pos.x = origData.x;
-        pos.y = origData.y
-        return pos;
-    },
-    worldToScreen(x, y) {
-        //const ref = this.clientPos();
-        const newX = x
-        const newY = (serverMapData.height * serverMapData.tileSize) - y
 
+    // =========================================================
+    // INTERNAL CULL STATE
+    // =========================================================
+    _cullDirty: false,
+
+    requestCullAll() {
+        this._cullDirty = true;
+    },
+
+    // =========================================================
+    // WORLD -> SCREEN
+    // =========================================================
+    spos(x, y) {
         return {
-            x: newX,
-            y: newY
-        }
+            x,
+            y: -y
+        };
     },
 
 
-    // Remove a player
+    // =========================================================
+    // REMOVE PLAYER
+    // =========================================================
     remPlayer(id) {
-        if (EntityData.players.has(id)) {
-            const sprite = EntityData.players.get(id);
-            renderContainers.players.removeChild(sprite);
-            EntityData.players.delete(id);
-        }
+        if (!EntityData.players.has(id)) return;
+
+        const sprite = EntityData.players.get(id);
+        renderContainers.players.removeChild(sprite);
+
+        EntityData.players.delete(id);
     },
 
-    // Add / create a player
+
+    // =========================================================
+    // CREATE PLAYER
+    // =========================================================
     setPlayer(player) {
         const graphics = new PIXI.Graphics();
+
         graphics.circle(0, 0, 22);
-        graphics.fill(0xffffff);
-        graphics.stroke({ width: 3, color: 0xc2c2c2 });
+        graphics.fill(0xffe763);
+        graphics.stroke({ width: 3, color: 0xcfbb50 });
         graphics.lineWidth = 10;
         graphics.pivot.set(0, 0);
 
@@ -336,37 +468,70 @@ const EntityUtil = {
 
         this.updPlayer(player, false);
 
-        renderContainers.players.addChild(graphics);
+        if (player.id === EntityData.client.id) {
+            graphics.zIndex = 3;
+            worldContainer.addChild(graphics);
+            this.updateScreenPositions(false);
+        } else {
+            renderContainers.players.addChild(graphics);
+        }
 
+        // ensure correct visibility immediately
+        this.playerCullCheck(player.id);
 
-        this.updateScreenPositions()
+        // camera may have changed relevance
+        this.requestCullAll();
     },
 
-    // Update a single player sprite
+
+    // =========================================================
+    // UPDATE PLAYER
+    // =========================================================
     updPlayer(player, ease = true) {
+
         const sprite = EntityData.players.get(player.id);
+        if (!sprite) return;
 
-        const screenPos = this.worldToScreen(player.x, player.y)
+        const screenPos = this.spos(player.x, player.y);
 
-        if (ease) {
-            gsap.to(sprite, {
-                x: screenPos.x,
-                y: screenPos.y,   // avoid flipping sign unless your coordinate system requires it
-                duration: 0.08, // match to server tick rate
-                ease: 'linear',
-                overwrite: 'auto'
-            });
+        if (player.id !== EntityData.client.id) {
+
+            if (ease) {
+                gsap.to(sprite, {
+                    x: screenPos.x,
+                    y: screenPos.y,
+                    duration: 0.08,
+                    ease: 'linear',
+                    overwrite: 'auto'
+                });
+            } else {
+                sprite.x = screenPos.x;
+                sprite.y = screenPos.y;
+            }
+
+            // only THIS player needs checking
+            this.playerCullCheck(player.id);
+
         } else {
-            sprite.x = screenPos.x;
-            sprite.y = screenPos.y;
+            // client moved → camera changed → full cull
+            this.requestCullAll();
         }
-        
-        //sprite.x = player.x;
-        //sprite.y = -player.y;
-        //console.log(player)
-        
 
-        sprite["__orig_data"] = {
+
+        //console.log(player.x, player.y)
+
+        this.setOrigData(player);
+    },
+
+
+    // =========================================================
+    // STORE RAW WORLD DATA
+    // =========================================================
+    setOrigData(player) {
+        const sprite = EntityData.players.get(player.id);
+        if (!sprite) return;
+
+        sprite.__orig_data = {
             id: player.id,
             x: player.x,
             y: player.y
@@ -374,58 +539,176 @@ const EntityUtil = {
     },
 
 
-    updateScreenPositions(ease = false) {
+    // =========================================================
+    // CAMERA CENTER
+    // =========================================================
+    centerRenderContent(ease = false) {
+
         const duration = ease ? 0.08 : 0;
         const easing = ease ? 'linear' : 'none';
 
-        // Tween or set main offset container
         if (ease) {
-            gsap.to(mainOffsetContainer, {
+            gsap.to(worldContainer, {
                 x: window.innerWidth / 2,
                 y: window.innerHeight / 2,
-                duration: duration,
+                duration,
                 ease: easing,
                 overwrite: 'auto'
             });
         } else {
-            mainOffsetContainer.x = window.innerWidth / 2;
-            mainOffsetContainer.y = window.innerHeight / 2;
+            worldContainer.x = window.innerWidth / 2;
+            worldContainer.y = window.innerHeight / 2;
         }
 
-        // Get the player sprite
-        const sprite = EntityData.players.get(EntityData.clientId);
-        const origData = sprite?.__orig_data;
-        if (!origData) return;
-        const screenPos = this.worldToScreen(origData.x, origData.y)
+        this.requestCullAll();
+    },
 
-        // Tween or set render containers
-        // Players container
+
+    // =========================================================
+    // CAMERA UPDATE (MAIN TRIGGER)
+    // =========================================================
+    updateScreenPositions(ease = false) {
+
+        const duration = ease ? 0.08 : 0;
+        const easing = ease ? 'linear' : 'none';
+
+        const clientSprite = EntityData.players.get(EntityData.client.id);
+        if (!clientSprite) return;
+
+        const clientOrig = clientSprite.__orig_data;
+        if (!clientOrig) return;
+
+        const clientScreen = this.spos(clientOrig.x, clientOrig.y);
+
+        // players container
         if (ease) {
             gsap.to(renderContainers.players, {
-                x: -screenPos.x,
-                y: -screenPos.y,
-                duration: duration,
+                x: -clientScreen.x,
+                y: -clientScreen.y,
+                duration,
+                ease: easing,
+                overwrite: 'auto'
+            });
+
+            gsap.to(renderContainers.map, {
+                x: -clientScreen.x,
+                y: -clientScreen.y - (serverMapData.height * serverMapData.tileSize),
+                duration,
                 ease: easing,
                 overwrite: 'auto'
             });
         } else {
-            renderContainers.players.x = -screenPos.x;
-            renderContainers.players.y = -screenPos.y;
+            renderContainers.players.x = -clientScreen.x;
+            renderContainers.players.y = -clientScreen.y;
+
+            renderContainers.map.x = -clientScreen.x;
+            renderContainers.map.y = -clientScreen.y - (serverMapData.height * serverMapData.tileSize);
         }
 
-        //// Map container
-        if (ease) {
-            gsap.to(renderContainers.map, {
-                x: -screenPos.x,
-                y: -screenPos.y,
-                duration: duration,
-                ease: easing,
-                overwrite: 'auto'
-            });
-        } else {
-            renderContainers.map.x = -screenPos.x;
-            renderContainers.map.y = -screenPos.y;
+        // camera moved → full cull needed
+        this.requestCullAll();
+        this.runCullAllIfNeeded();
+    },
+
+
+    // =========================================================
+    // FULL CULL CACHE
+    // =========================================================
+    _getCullCache() {
+
+        const client = EntityData.players.get(EntityData.client.id);
+        if (!client || !client.__orig_data) return null;
+
+        const c = EntityData.client.cullBox;
+
+        const halfW = c.width * 0.5;
+        const halfH = c.height * 0.5;
+
+        const x = client.__orig_data.x;
+        const y = -client.__orig_data.y;
+
+        return {
+            minX: x - halfW,
+            maxX: x + halfW,
+            minY: y - halfH,
+            maxY: y + halfH
+        };
+    },
+
+
+    // =========================================================
+    // FULL CULL PASS (OPTIMIZED)
+    // =========================================================
+    runCullAllIfNeeded() {
+        //return // temp disable
+
+        if (!this._cullDirty) return;
+        this._cullDirty = false;
+
+        const cached = this._getCullCache();
+        if (!cached) return;
+
+        for (const [id, sprite] of EntityData.players) {
+
+            const orig = sprite.__orig_data;
+            if (!orig) continue;
+
+            const x = orig.x;
+            const y = -orig.y;
+
+            const r = 22;
+
+            sprite.visible =
+                (x + r) >= cached.minX &&
+                (x - r) <= cached.maxX &&
+                (y + r) >= cached.minY &&
+                (y - r) <= cached.maxY;
         }
+
+        for (const sprite of MapData.tiles) {
+            const x = sprite.x
+            const y = sprite.y - (serverMapData.height * serverMapData.tileSize)
+
+            if (sprite.x == 200 && sprite.y == 200) {
+                console.log(cached.minX, cached.maxX, cached.minY, cached.maxY)
+            }
+
+            const r = serverMapData.tileSize / 2
+
+            sprite.visible =
+                (x + r) >= cached.minX &&
+                (x - r) <= cached.maxX &&
+                (y + r) >= cached.minY &&
+                (y - r) <= cached.maxY;
+        }
+    },
+
+
+    // =========================================================
+    // SINGLE PLAYER CULL CHECK
+    // =========================================================
+    playerCullCheck(id) {
+        //return // temp disable
+
+        const sprite = EntityData.players.get(id);
+        if (!sprite) return;
+
+        const orig = sprite.__orig_data;
+        if (!orig) return;
+
+        const cached = this._getCullCache();
+        if (!cached) return;
+
+        const x = orig.x;
+        const y = -orig.y;
+
+        const r = 22;
+
+        sprite.visible =
+            (x + r) >= cached.minX &&
+            (x - r) <= cached.maxX &&
+            (y + r) >= cached.minY &&
+            (y - r) <= cached.maxY;
     }
 };
 
@@ -483,6 +766,7 @@ inputLoopId = setInterval(inputLoop, 1000 / 30)
 //
 
 window.addEventListener("resize", () => {
+    EntityUtil.centerRenderContent();
     EntityUtil.updateScreenPositions();
 });
 

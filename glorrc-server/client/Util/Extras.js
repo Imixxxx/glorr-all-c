@@ -1,5 +1,8 @@
 export default class Extras {
 
+    static fslw(n) {
+        return n / 6
+    }
     
     static worldCenter(x, y) {
         return {

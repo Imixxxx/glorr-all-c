@@ -51,6 +51,7 @@
     <None Include="public\Util\Extras.js">
       <Filter>Source Files\client\util</Filter>
     </None>
+    <None Include="..\..\..\..\Downloads\dirt_l_0.svg" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="server\server.cpp">
@@ -68,11 +69,11 @@
     <ClCompile Include="server\GameState.cpp">
       <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="server\DataStructs.cpp">
-      <Filter>Source Files\server</Filter>
-    </ClCompile>
     <ClCompile Include="server\map\MapLoader.cpp">
       <Filter>Source Files\server\maps</Filter>
+    </ClCompile>
+    <ClCompile Include="server\chunk\ChunkCoord.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -88,11 +89,20 @@
     <ClInclude Include="server\GameState.h">
       <Filter>Source Files\server</Filter>
     </ClInclude>
-    <ClInclude Include="server\DataStructs.h">
-      <Filter>Source Files\server</Filter>
-    </ClInclude>
     <ClInclude Include="server\map\MapLoader.h">
       <Filter>Source Files\server\maps</Filter>
+    </ClInclude>
+    <ClInclude Include="server\_types\GameTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="server\map\Tile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="server\map\Map.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="server\chunk\ChunkCoord.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,7 +1,6 @@
 #include "Packet.h"
 #include <cstring>
 #include <string_view>
-#include "../DataStructs.h"
 
 template<typename T>
 void Packet::write(std::vector<uint8_t>& buffer, const T& value)
@@ -66,6 +65,22 @@ std::vector<uint8_t> Packet::Players::encode(
 
 
 
+std::vector<uint8_t> Packet::PlayerServerStatus::encode(
+    uint8_t messageType,
+    uint16_t playerId)
+{
+    std::vector<uint8_t> buffer;
+
+    buffer.push_back(messageType);
+
+    // player id only
+    write(buffer, playerId);
+
+    return buffer;
+}
+
+
+
 InputState Packet::Input::decode(const std::vector<uint8_t>& buffer)
 {
     InputState state{};
@@ -92,10 +107,9 @@ std::vector<uint8_t> Packet::Map::encode(
 {
     std::vector<uint8_t> buffer;
 
-    // Message type
     buffer.push_back(messageType);
 
-    // Header
+    // Header (unchanged)
     write(buffer, map.width);
     write(buffer, map.height);
     write(buffer, map.tile_size);
@@ -106,15 +120,21 @@ std::vector<uint8_t> Packet::Map::encode(
     uint32_t tileCount = (uint32_t)map.tiles.size();
     write(buffer, tileCount);
 
-    // Pack tile into 1 byte (texture + rotation only)
-    auto packTile = [](const Tile& tile) -> uint8_t {
-        return ((tile.rotation & 0b11) << 5) |
-            (tile.texture & 0b11111);
+    // Pack tile into 16 bits (t + r + u)
+    auto packTile = [](const Tile& tile) -> uint16_t {
+        return
+            (uint16_t)(tile.texture & 0b11111) |
+            ((tile.rotation & 0b11) << 5) |
+            ((tile.underlay & 0b11111) << 7);
         };
 
     for (const Tile& tile : map.tiles)
     {
-        buffer.push_back(packTile(tile));
+        uint16_t packed = packTile(tile);
+
+        // write as 2 bytes (little endian)
+        buffer.push_back(packed & 0xFF);
+        buffer.push_back((packed >> 8) & 0xFF);
     }
 
     return buffer;

@@ -137,7 +137,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="server\DataStructs.cpp" />
+    <ClCompile Include="server\chunk\ChunkCoord.cpp" />
     <ClCompile Include="server\util\file_utils.cpp" />
     <ClCompile Include="server\GameState.cpp" />
     <ClCompile Include="server\map\MapLoader.cpp" />
@@ -146,6 +146,7 @@
     <ClCompile Include="server\ws_handler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\..\..\Downloads\dirt_l_0.svg" />
     <None Include="public\client.js" />
     <None Include="public\Util\Extras.js" />
     <None Include="client\index.html" />
@@ -154,7 +155,10 @@
     <None Include="client\style.css" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="server\DataStructs.h" />
+    <ClInclude Include="server\chunk\ChunkCoord.h" />
+    <ClInclude Include="server\_types\GameTypes.h" />
+    <ClInclude Include="server\map\Map.h" />
+    <ClInclude Include="server\map\Tile.h" />
     <ClInclude Include="server\util\file_utils.h" />
     <ClInclude Include="server\GameState.h" />
     <ClInclude Include="server\map\MapLoader.h" />
