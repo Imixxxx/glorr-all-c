@@ -126,7 +126,7 @@ std::vector<const Player*> GameState::getVisiblePlayers(int clientId)
             // Get the pointer to the actual player in your master list
             Player* p = getPlayer(playerId);
 
-            if (p) {
+            if (p && playerId != clientId) {
                 // Store the address, not a copy of the whole object
                 result.push_back(p);
             }

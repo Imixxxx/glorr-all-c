@@ -111,7 +111,7 @@ export default class Packet {
         }
     }
 
-    static PLAYER_SERVER_STATUS = class {
+    static CLIENT_PLAYER = class {
         static decode(buffer) {
             const view = new DataView(buffer);
             let offset = 0;
@@ -122,12 +122,18 @@ export default class Packet {
             const id = view.getUint16(offset, true); // little endian
             offset += 2;
 
+            const x = view.getFloat32(offset, true);
+            offset += 4;
+
+            const y = view.getFloat32(offset, true);
+            offset += 4;
+
             return {
                 type,
-                data: { id }
+                data: { id, x, y }
             };
         }
-    }
+    };
 
     static UINT16 = class {
         static decode(buffer) {

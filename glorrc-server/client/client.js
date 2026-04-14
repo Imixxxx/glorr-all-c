@@ -71,18 +71,13 @@ const tileTextures = tileTextureSrcs.map(src => PIXI.Assets.get(src));
 
 // Initialise EntityData
 
-const cullBoxGap = 250
+
 const EntityData = {
     players: new Map(), // store all player sprites
 
     client: {
         id: null,
-        cullBox: {
-            x: -cullBoxGap - window.innerWidth / 2,
-            y: -cullBoxGap - window.innerHeight / 2,
-            width: window.innerWidth + cullBoxGap * 2,
-            height: window.innerHeight + cullBoxGap * 2
-        }
+        inGame: false
     }
 }
 
@@ -117,33 +112,6 @@ Object.keys(renderContainers).forEach((name, index) => {
 });
 
 
-
-
-
-// CullBox Debug
-//const cullBox = new PIXI.Graphics();
-//cullBox.zIndex = 5
-//cullBox.rect(EntityData.client.cullBox.x, EntityData.client.cullBox.y, EntityData.client.cullBox.width, EntityData.client.cullBox.height);
-//cullBox.stroke({
-//    color: 0xffffff,
-//    width: 6
-//});
-//worldContainer.addChild(cullBox)
-
-window.addEventListener('resize', () => {
-    EntityData.client.cullBox = {
-        x: -cullBoxGap - window.innerWidth / 2,
-        y: -cullBoxGap - window.innerHeight / 2,
-        width: window.innerWidth + cullBoxGap * 2,
-        height: window.innerHeight + cullBoxGap * 2
-    }
-    //cullBox.clear()
-    //cullBox.rect(EntityData.client.cullBox.x, EntityData.client.cullBox.y, EntityData.client.cullBox.width, EntityData.client.cullBox.height);
-    //cullBox.stroke({
-    //    color: 0xffffff,
-    //    width: 6
-    //});
-})
 
 
 
@@ -249,7 +217,7 @@ function packetEvent(buffer) {
                 ids.push(p.id);
             });
             for (const [id, p] of EntityData.players) {
-                if (!ids.includes(id)) {
+                if (id != EntityData.client.id && !ids.includes(id)) {
                     EntityUtil.remPlayer(id)
                 }
             }
@@ -281,17 +249,20 @@ function packetEvent(buffer) {
             // Update all players
             packet.data.forEach((p) => {
                 if (EntityData.players.has(p.id)) {
+                    if (p.id == EntityData.client.id) return;
+
                     EntityUtil.updPlayer(p)
-                    if (p.id == EntityData.client.id) {
-                        EntityUtil.updateScreenPositions(true);
-                    }
                 }
             });
             break;
         }
 
         case 6: {
-            const packet = Packet.PLAYER_SERVER_STATUS.decode(buffer);
+            const packet = Packet.CLIENT_PLAYER.decode(buffer);
+
+            if (packet.data.id == EntityData.client.id) {
+                ClientEvents.onWorldJoin(packet.data)
+            }
 
             console.log(`Player with id ${packet.data.id} joined the server`)
 
@@ -299,9 +270,13 @@ function packetEvent(buffer) {
         }
 
         case 7: {
-            const packet = Packet.PLAYER_SERVER_STATUS.decode(buffer);
+            const packet = Packet.UINT16.decode(buffer);
 
-            console.log(`Player with id ${packet.data.id} left the server`)
+            if (packet.data.id == EntityData.client.id) {
+                if (EntityData.client.inGame) EntityData.client.inGame = false;
+            }
+
+            console.log(`Player with id ${packet.data} left the server`)
 
             break;
         }
@@ -317,10 +292,52 @@ function packetEvent(buffer) {
             break;
         }
 
+        case 8: {
+            const packet = Packet.CLIENT_PLAYER.decode(buffer);
+
+            ClientEvents.sync(packet.data)
+            //console.log(`> Client sync packet`)
+
+            break;
+        }
+
+
         default: {
             console.warn("Unknown packet type:", type);
         }
     }
+}
+
+
+const ClientEvents = {
+
+    sync(data) {
+        EntityUtil.setRawData(data, true);
+        EntityUtil.updateScreenPositions(true);
+    },
+
+    onWorldJoin(data) {
+        if (!EntityData.client.inGame) { EntityData.client.inGame = true; }
+
+        EntityUtil.setPlayer(data);
+        EntityUtil.updateScreenPositions();
+
+
+        setTimeout(() => { this.connecting(false); }, 400)
+        
+    },
+
+
+    // HTML
+    connecting(state) {
+        const screen = document.getElementById('connecting');
+        if (state) {
+            screen.style.display = 'flex'
+        } else {
+            screen.style.display = 'none'
+        }
+    }
+
 }
 
 
@@ -419,14 +436,6 @@ const MapUtil = {
 
 const EntityUtil = {
 
-    // =========================================================
-    // INTERNAL CULL STATE
-    // =========================================================
-    _cullDirty: false,
-
-    requestCullAll() {
-        this._cullDirty = true;
-    },
 
     // =========================================================
     // WORLD -> SCREEN
@@ -457,6 +466,7 @@ const EntityUtil = {
     // =========================================================
     setPlayer(player) {
         const graphics = new PIXI.Graphics();
+        const screenPos = this.spos(player.x, player.y);
 
         graphics.circle(0, 0, 22);
         graphics.fill(0xffe763);
@@ -476,11 +486,6 @@ const EntityUtil = {
             renderContainers.players.addChild(graphics);
         }
 
-        // ensure correct visibility immediately
-        this.playerCullCheck(player.id);
-
-        // camera may have changed relevance
-        this.requestCullAll();
     },
 
 
@@ -488,14 +493,13 @@ const EntityUtil = {
     // UPDATE PLAYER
     // =========================================================
     updPlayer(player, ease = true) {
+        if (player.id == EntityData.client.id) return;
 
         const sprite = EntityData.players.get(player.id);
         if (!sprite) return;
-
         const screenPos = this.spos(player.x, player.y);
 
-        if (player.id !== EntityData.client.id) {
-
+        if (player.id != EntityData.client.id) {
             if (ease) {
                 gsap.to(sprite, {
                     x: screenPos.x,
@@ -508,34 +512,40 @@ const EntityUtil = {
                 sprite.x = screenPos.x;
                 sprite.y = screenPos.y;
             }
-
-            // only THIS player needs checking
-            this.playerCullCheck(player.id);
-
-        } else {
-            // client moved → camera changed → full cull
-            this.requestCullAll();
         }
-
-
-        //console.log(player.x, player.y)
-
-        this.setOrigData(player);
+        //else {
+        //    this.setRawData(player);
+        //}
+        
+        this.setRawData(player);
     },
 
 
     // =========================================================
     // STORE RAW WORLD DATA
     // =========================================================
-    setOrigData(player) {
+    setRawData(player, ease = false) {
         const sprite = EntityData.players.get(player.id);
         if (!sprite) return;
-
-        sprite.__orig_data = {
-            id: player.id,
-            x: player.x,
-            y: player.y
-        };
+        
+        if ("__raw_data" in sprite && ease) {
+            gsap.to(sprite.__raw_data, {
+                x: player.x,
+                y: player.y,
+                duration: 0.08,
+                ease: 'linear',
+                overwrite: 'auto'
+            });
+            sprite.__raw_data.id = player.id;
+        } else {
+            sprite.__raw_data = {
+                id: player.id,
+                x: player.x,
+                y: player.y
+            }
+        }
+        
+        
     },
 
 
@@ -559,8 +569,6 @@ const EntityUtil = {
             worldContainer.x = window.innerWidth / 2;
             worldContainer.y = window.innerHeight / 2;
         }
-
-        this.requestCullAll();
     },
 
 
@@ -575,7 +583,7 @@ const EntityUtil = {
         const clientSprite = EntityData.players.get(EntityData.client.id);
         if (!clientSprite) return;
 
-        const clientOrig = clientSprite.__orig_data;
+        const clientOrig = clientSprite.__raw_data;
         if (!clientOrig) return;
 
         const clientScreen = this.spos(clientOrig.x, clientOrig.y);
@@ -605,111 +613,8 @@ const EntityUtil = {
             renderContainers.map.y = -clientScreen.y - (serverMapData.height * serverMapData.tileSize);
         }
 
-        // camera moved → full cull needed
-        this.requestCullAll();
-        this.runCullAllIfNeeded();
     },
 
-
-    // =========================================================
-    // FULL CULL CACHE
-    // =========================================================
-    _getCullCache() {
-
-        const client = EntityData.players.get(EntityData.client.id);
-        if (!client || !client.__orig_data) return null;
-
-        const c = EntityData.client.cullBox;
-
-        const halfW = c.width * 0.5;
-        const halfH = c.height * 0.5;
-
-        const x = client.__orig_data.x;
-        const y = -client.__orig_data.y;
-
-        return {
-            minX: x - halfW,
-            maxX: x + halfW,
-            minY: y - halfH,
-            maxY: y + halfH
-        };
-    },
-
-
-    // =========================================================
-    // FULL CULL PASS (OPTIMIZED)
-    // =========================================================
-    runCullAllIfNeeded() {
-        //return // temp disable
-
-        if (!this._cullDirty) return;
-        this._cullDirty = false;
-
-        const cached = this._getCullCache();
-        if (!cached) return;
-
-        for (const [id, sprite] of EntityData.players) {
-
-            const orig = sprite.__orig_data;
-            if (!orig) continue;
-
-            const x = orig.x;
-            const y = -orig.y;
-
-            const r = 22;
-
-            sprite.visible =
-                (x + r) >= cached.minX &&
-                (x - r) <= cached.maxX &&
-                (y + r) >= cached.minY &&
-                (y - r) <= cached.maxY;
-        }
-
-        for (const sprite of MapData.tiles) {
-            const x = sprite.x
-            const y = sprite.y - (serverMapData.height * serverMapData.tileSize)
-
-            if (sprite.x == 200 && sprite.y == 200) {
-                console.log(cached.minX, cached.maxX, cached.minY, cached.maxY)
-            }
-
-            const r = serverMapData.tileSize / 2
-
-            sprite.visible =
-                (x + r) >= cached.minX &&
-                (x - r) <= cached.maxX &&
-                (y + r) >= cached.minY &&
-                (y - r) <= cached.maxY;
-        }
-    },
-
-
-    // =========================================================
-    // SINGLE PLAYER CULL CHECK
-    // =========================================================
-    playerCullCheck(id) {
-        //return // temp disable
-
-        const sprite = EntityData.players.get(id);
-        if (!sprite) return;
-
-        const orig = sprite.__orig_data;
-        if (!orig) return;
-
-        const cached = this._getCullCache();
-        if (!cached) return;
-
-        const x = orig.x;
-        const y = -orig.y;
-
-        const r = 22;
-
-        sprite.visible =
-            (x + r) >= cached.minX &&
-            (x - r) <= cached.maxX &&
-            (y + r) >= cached.minY &&
-            (y - r) <= cached.maxY;
-    }
 };
 
 

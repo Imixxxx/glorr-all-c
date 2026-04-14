@@ -40,7 +40,7 @@ void handleJoin(auto* ws, uWS::App& app) {
 
     // Send players snapshot to joined player
     std::vector<Player> &players = GameState::getPlayers();
-    std::vector<uint8_t> buffer1 = Packet::Players::encode(1, players);
+    std::vector<uint8_t> buffer1 = Packet::Players::encode(1, players, id);
     ws->send(Packet::toStringView(buffer1), uWS::OpCode::BINARY);
 
     
@@ -53,7 +53,7 @@ void handleJoin(auto* ws, uWS::App& app) {
 
 
     // Publish join packet to all players
-    std::vector<uint8_t> buffer2 = Packet::PlayerServerStatus::encode(6, player.id);
+    std::vector<uint8_t> buffer2 = Packet::ClientPlayer::encode(6, player);
     app.publish("game", Packet::toStringView(buffer2), uWS::OpCode::BINARY);
 
     std::cout << "Player joined with id: " << id << std::endl;
@@ -76,7 +76,7 @@ void handleLeave(auto* ws, uWS::App& app) {
 
 
     // Publish leave packet to all players
-    std::vector<uint8_t> buffer = Packet::PlayerServerStatus::encode(7, id);
+    std::vector<uint8_t> buffer = Packet::UInt16::encode(7, id);
     app.publish("game", Packet::toStringView(buffer), uWS::OpCode::BINARY);
 
 
@@ -214,7 +214,7 @@ void WsHandler::sendChunkDeltaUpdates() {
             auto it = connections.find(player.id);
             if (it != connections.end()) {
                 uWS::WebSocket<false, true, WsHandler::UserData>* ws = it->second;
-                std::vector<uint8_t> buffer = Packet::Players::encode(4, deltaUpdates);
+                std::vector<uint8_t> buffer = Packet::Players::encode(4, deltaUpdates, player.id);
                 ws->send(Packet::toStringView(buffer), uWS::OpCode::BINARY);
             }
 
@@ -231,7 +231,7 @@ void WsHandler::sendChunkDeltaUpdates() {
     GameState::snapshotPlayers();
 }
 
-void WsHandler::sendFullSnapshot() {
+void WsHandler::sendChunkSnapshots() {
     std::vector<Player>& allPlayers = GameState::getPlayers();
 
     for (const Player& player : allPlayers) {
@@ -250,7 +250,7 @@ void WsHandler::sendFullSnapshot() {
             }
 
             // 3. Encode and send
-            std::vector<uint8_t> buffer = Packet::Players::encode(1, playersToEncode);
+            std::vector<uint8_t> buffer = Packet::Players::encode(1, playersToEncode, player.id);
             ws->send(Packet::toStringView(buffer), uWS::OpCode::BINARY);
         }
     }
@@ -266,17 +266,23 @@ void WsHandler::gameLoop(uWS::App& app)
     const float decel = GameState::Constants::Player::Deceleration;
     const float maxSpeed = GameState::Constants::Player::MaxSpeed;
 
+    // -----------------------------
+    // TIMERS (network scheduling)
+    // -----------------------------
+    static uint64_t snapshotAccumulator = 0;
+    static uint64_t correctionAccumulator = 0;
+
+    const uint64_t snapshotInterval = 500;    // 2x per second
+    const uint64_t correctionInterval = 100;   // 10x per second
+
+    // -----------------------------
+    // SIMULATION STEP
+    // -----------------------------
     for (auto& player : players)
     {
-        // -----------------------------
-        // Store old position
-        // -----------------------------
         player.oldX = player.x;
         player.oldY = player.y;
 
-        // -----------------------------
-        // Input
-        // -----------------------------
         float ix = 0.0f;
         float iy = 0.0f;
 
@@ -292,15 +298,9 @@ void WsHandler::gameLoop(uWS::App& app)
             iy /= length;
         }
 
-        // -----------------------------
-        // Acceleration
-        // -----------------------------
         player.vx += ix * accel;
         player.vy += iy * accel;
 
-        // -----------------------------
-        // Deceleration
-        // -----------------------------
         if (ix == 0.0f)
         {
             if (player.vx > 0) player.vx = std::max(0.0f, player.vx - decel);
@@ -313,9 +313,6 @@ void WsHandler::gameLoop(uWS::App& app)
             else if (player.vy < 0) player.vy = std::min(0.0f, player.vy + decel);
         }
 
-        // -----------------------------
-        // Speed clamp
-        // -----------------------------
         float speed = std::sqrt(player.vx * player.vx + player.vy * player.vy);
         if (speed > maxSpeed)
         {
@@ -323,21 +320,11 @@ void WsHandler::gameLoop(uWS::App& app)
             player.vy = (player.vy / speed) * maxSpeed;
         }
 
-        // -----------------------------
-        // Movement
-        // -----------------------------
         player.x += player.vx;
         player.y += player.vy;
 
-        // -----------------------------
-        // CHUNK UPDATE (CLEAN VERSION)
-        // -----------------------------
         auto [oldCx, oldCy] = ChunkCoord::getChunkCoord(player.oldX, player.oldY);
         auto [newCx, newCy] = ChunkCoord::getChunkCoord(player.x, player.y);
-
-
-        
-
 
         long long oldKey = GameState::getChunkKey(oldCx, oldCy);
         long long newKey = GameState::getChunkKey(newCx, newCy);
@@ -345,21 +332,62 @@ void WsHandler::gameLoop(uWS::App& app)
         GameState::movePlayerChunk(player.id, oldKey, newKey);
     }
 
+    // -----------------------------
+    // WORLD DELTAS (every tick)
+    // -----------------------------
     sendChunkDeltaUpdates();
 
 
 
 
     // Chunk info debug logging
-    
+
     /*static int tick = 0;
     tick++;
-
+    
     if (tick % 60 == 0)
     {
         GameState::debugChunks();
     }*/
 
 
-    
+
+
+
+
+    // -----------------------------
+    // SNAPSHOTS (LOW FREQUENCY)
+    // -----------------------------
+    snapshotAccumulator += 1000 / 60;
+
+    if (snapshotAccumulator >= snapshotInterval)
+    {
+        WsHandler::sendChunkSnapshots();
+        snapshotAccumulator = 0;
+    }
+
+    // -----------------------------
+    // SELF CORRECTION (MEDIUM FREQUENCY)
+    // -----------------------------
+    correctionAccumulator += 1000 / 60;
+
+    if (correctionAccumulator >= correctionInterval)
+    {
+        correctionAccumulator = 0;
+
+        for (const auto& player : players)
+        {
+            auto it = connections.find(player.id);
+            if (it == connections.end()) continue;
+
+            auto* ws = it->second;
+
+            auto buffer = Packet::ClientPlayer::encode(
+                8,
+                player
+            );
+
+            ws->send(Packet::toStringView(buffer), uWS::OpCode::BINARY);
+        }
+    }
 }

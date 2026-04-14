@@ -1,7 +1,7 @@
 export default class Extras {
 
     static fslw(n) {
-        return n / 6
+        return 0.15 * n
     }
     
     static worldCenter(x, y) {

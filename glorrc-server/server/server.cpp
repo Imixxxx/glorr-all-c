@@ -64,23 +64,11 @@ int main(int argc, char* argv[]) {
     // --- GAME LOOP ---
     auto* loop = (struct us_loop_t*)uWS::Loop::get();
     struct us_timer_t* timer = us_create_timer(loop, 0, 0);
-    
+
     us_timer_set(timer, [](us_timer_t*) {
 
-
-        // --- GAME TICK LOGIC ---
-        WsHandler::gameLoop(*g_app);   // runs every tick (~16ms)
-        
-
-        // --- FULL SNAPSHOT LOGIC ---
-        static uint64_t fullSnapshotAccumulator = 0;
-        const uint64_t fullSnapshotInterval = 500;
-
-        fullSnapshotAccumulator += 1000 / 60;
-        if (fullSnapshotAccumulator >= fullSnapshotInterval) {
-            WsHandler::sendFullSnapshot();
-            fullSnapshotAccumulator = 0;
-        }
+        // ONLY calls game loop now
+        WsHandler::gameLoop(*g_app);
 
     }, 1000 / 60, 1000 / 60);
 

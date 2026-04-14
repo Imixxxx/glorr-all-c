@@ -1,15 +1,35 @@
 #include "Packet.h"
 #include <cstring>
 #include <string_view>
+#include <vector>
+#include <cstdint>
+#include <type_traits>
+#include <bit>
+#include <algorithm>
 
 template<typename T>
 void Packet::write(std::vector<uint8_t>& buffer, const T& value)
 {
-    const uint8_t* bytes = reinterpret_cast<const uint8_t*>(&value);
+    static_assert(std::is_trivially_copyable_v<T>,
+        "Packet::write only supports trivially copyable types");
 
-    for (size_t i = 0; i < sizeof(T); i++)
-        buffer.push_back(bytes[i]);
+    static_assert(std::numeric_limits<float>::is_iec559,
+        "Float must be IEEE 754");
+
+    T temp = value;
+
+    uint8_t* bytes = reinterpret_cast<uint8_t*>(&temp);
+
+    // ensure little-endian output for network consistency
+    if constexpr (std::endian::native == std::endian::big)
+    {
+        std::reverse(bytes, bytes + sizeof(T));
+    }
+
+    buffer.insert(buffer.end(), bytes, bytes + sizeof(T));
 }
+
+
 
 
 
@@ -43,38 +63,51 @@ std::vector<uint8_t> Packet::Player::encode(
 
 std::vector<uint8_t> Packet::Players::encode(
     uint8_t messageType,
-    const std::vector<::Player>& players)
+    const std::vector<::Player>& players,
+    uint16_t excludeId)
 {
     std::vector<uint8_t> buffer;
 
     buffer.push_back(messageType);
 
-    uint16_t count = (uint16_t)players.size();
-    write(buffer, count);
+    uint16_t count = 0;
+
+    // We'll encode count AFTER filtering (important)
+    size_t countPos = buffer.size();
+    write(buffer, count); // placeholder
 
     for (const ::Player& p : players)
     {
+        if (p.id == excludeId)
+            continue;
+
         write(buffer, p.id);
         write(buffer, p.x);
         write(buffer, p.y);
         write(buffer, p.health);
+
+        count++;
     }
+
+    // overwrite correct count
+    std::memcpy(buffer.data() + countPos, &count, sizeof(count));
 
     return buffer;
 }
 
 
 
-std::vector<uint8_t> Packet::PlayerServerStatus::encode(
+std::vector<uint8_t> Packet::ClientPlayer::encode(
     uint8_t messageType,
-    uint16_t playerId)
+    const ::Player& player)
 {
     std::vector<uint8_t> buffer;
 
     buffer.push_back(messageType);
 
-    // player id only
-    write(buffer, playerId);
+    write(buffer, player.id);
+    write(buffer, player.x);
+    write(buffer, player.y);
 
     return buffer;
 }

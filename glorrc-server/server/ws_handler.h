@@ -20,7 +20,7 @@ public:
 
     static void sendChunkDeltaUpdates();
 
-    static void sendFullSnapshot();
+    static void sendChunkSnapshots();
 
     static void gameLoop(uWS::App& app);
 };

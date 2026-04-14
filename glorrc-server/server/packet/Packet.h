@@ -23,21 +23,22 @@ public:
     struct Players {
         static std::vector<uint8_t> encode(
             uint8_t messageType,
-            const std::vector<::Player>& players
+            const std::vector<::Player>& players,
+            uint16_t excludeId = 0xFFFF
         );
     };
 
 
 
-    struct PlayerServerStatus {
+    struct ClientPlayer {
         static std::vector<uint8_t> encode(
             uint8_t messageType,
-            uint16_t playerId
+            const ::Player& player
         );
     };
 
 
-
+    
     struct UInt16 {
         static std::vector<uint8_t> encode(
             uint8_t messageType,

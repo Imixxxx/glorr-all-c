@@ -19,18 +19,28 @@ div, span, input, textarea {
 
 
 
-#loading {
+
+
+.overlay {
     width: 100%;
     height: 100%;
     position: absolute;
-
     display: flex;
     align-items: center;
     justify-content: center;
+}
 
+#loading {
+    background-color: #1e1e1e;
+    z-index: 1000000;
+}
+
+#connecting {
     background-color: #1e1e1e;
     z-index: 999999;
 }
+
+
 
 
 
